@@ -231,8 +231,8 @@ public class TestExportSnapshot {
   public void testSnapshotWithRefsExportFileSystemState() throws Exception {
     Configuration conf = TEST_UTIL.getConfiguration();
 
-    Path rootDir = TEST_UTIL.getHBaseCluster().getMaster().getMasterFileSystem().getRootDir();
-    FileSystem fs = TEST_UTIL.getHBaseCluster().getMaster().getMasterFileSystem().getFileSystem();
+    Path rootDir = TEST_UTIL.getHBaseCluster().getMaster().getMasterStorage().getRootDir();
+    FileSystem fs = TEST_UTIL.getHBaseCluster().getMaster().getMasterStorage().getFileSystem();
 
     SnapshotMock snapshotMock = new SnapshotMock(TEST_UTIL.getConfiguration(), fs, rootDir);
     SnapshotMock.SnapshotBuilder builder = snapshotMock.createSnapshotV2("tableWithRefsV1",
@@ -346,7 +346,7 @@ public class TestExportSnapshot {
       conf.setInt("mapreduce.map.maxattempts", 3);
     }
     // Export Snapshot
-    Path sourceDir = TEST_UTIL.getHBaseCluster().getMaster().getMasterFileSystem().getRootDir();
+    Path sourceDir = TEST_UTIL.getHBaseCluster().getMaster().getMasterStorage().getRootDir();
     int res = ExportSnapshot.innerMain(conf, new String[] {
       "-snapshot", Bytes.toString(snapshotName),
       "-copy-from", sourceDir.toString(),
@@ -427,7 +427,7 @@ public class TestExportSnapshot {
   }
 
   private Path getHdfsDestinationDir() {
-    Path rootDir = TEST_UTIL.getHBaseCluster().getMaster().getMasterFileSystem().getRootDir();
+    Path rootDir = TEST_UTIL.getHBaseCluster().getMaster().getMasterStorage().getRootDir();
     Path path = new Path(new Path(rootDir, "export-test"), "export-" + System.currentTimeMillis());
     LOG.info("HDFS export destination path: " + path);
     return path;

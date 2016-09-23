@@ -53,7 +53,7 @@ import org.apache.hadoop.hbase.coordination.BaseCoordinatedStateManager;
 import org.apache.hadoop.hbase.coordination.SplitLogManagerCoordination;
 import org.apache.hadoop.hbase.coordination.SplitLogManagerCoordination.SplitLogManagerDetails;
 import org.apache.hadoop.hbase.io.Reference;
-import org.apache.hadoop.hbase.fs.MasterFileSystem;
+import org.apache.hadoop.hbase.fs.MasterStorage;
 import org.apache.hadoop.hbase.master.CatalogJanitor.SplitParentFirstComparator;
 import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 import org.apache.hadoop.hbase.protobuf.generated.AdminProtos;
@@ -90,7 +90,7 @@ public class TestCatalogJanitor {
    */
   class MockMasterServices extends MockNoopMasterServices {
     private final ClusterConnection connection;
-    private final MasterFileSystem mfs;
+    private final MasterStorage mfs;
     private final AssignmentManager asm;
 
     MockMasterServices(final HBaseTestingUtility htu) throws IOException {
@@ -133,7 +133,7 @@ public class TestCatalogJanitor {
       FSUtils.setRootDir(getConfiguration(), rootdir);
       Mockito.mock(AdminProtos.AdminService.BlockingInterface.class);
 
-      this.mfs = new MasterFileSystem(this);
+      this.mfs = new MasterStorage(this);
       this.asm = Mockito.mock(AssignmentManager.class);
     }
 
@@ -143,7 +143,7 @@ public class TestCatalogJanitor {
     }
 
     @Override
-    public MasterFileSystem getMasterFileSystem() {
+    public MasterStorage getMasterStorage() {
       return this.mfs;
     }
 
@@ -237,7 +237,7 @@ public class TestCatalogJanitor {
       // remove the parent.
       Result r = createResult(parent, splita, splitb);
       // Add a reference under splitA directory so we don't clear out the parent.
-      Path rootdir = services.getMasterFileSystem().getRootDir();
+      Path rootdir = services.getMasterStorage().getRootDir();
       Path tabledir =
         FSUtils.getTableDir(rootdir, htd.getTableName());
       Path storedir = HStore.getStoreHomedir(tabledir, splita,
@@ -246,7 +246,7 @@ public class TestCatalogJanitor {
       long now = System.currentTimeMillis();
       // Reference name has this format: StoreFile#REF_NAME_PARSER
       Path p = new Path(storedir, Long.toString(now) + "." + parent.getEncodedName());
-      FileSystem fs = services.getMasterFileSystem().getFileSystem();
+      FileSystem fs = services.getMasterStorage().getFileSystem();
       Path path = ref.write(fs, p);
       assertTrue(fs.exists(path));
       assertFalse(janitor.cleanParent(parent, r));
@@ -573,7 +573,7 @@ public class TestCatalogJanitor {
     // remove the parent.
     Result parentMetaRow = createResult(parent, splita, splitb);
     FileSystem fs = FileSystem.get(htu.getConfiguration());
-    Path rootdir = services.getMasterFileSystem().getRootDir();
+    Path rootdir = services.getMasterStorage().getRootDir();
     // have to set the root directory since we use it in HFileDisposer to figure out to get to the
     // archive directory. Otherwise, it just seems to pick the first root directory it can find (so
     // the single test passes, but when the full suite is run, things get borked).
@@ -656,7 +656,7 @@ public class TestCatalogJanitor {
 
     FileSystem fs = FileSystem.get(htu.getConfiguration());
 
-    Path rootdir = services.getMasterFileSystem().getRootDir();
+    Path rootdir = services.getMasterStorage().getRootDir();
     // have to set the root directory since we use it in HFileDisposer to figure out to get to the
     // archive directory. Otherwise, it just seems to pick the first root directory it can find (so
     // the single test passes, but when the full suite is run, things get borked).
@@ -701,7 +701,7 @@ public class TestCatalogJanitor {
   private FileStatus[] addMockStoreFiles(int count, MasterServices services, Path storedir)
       throws IOException {
     // get the existing store files
-    FileSystem fs = services.getMasterFileSystem().getFileSystem();
+    FileSystem fs = services.getMasterStorage().getFileSystem();
     fs.mkdirs(storedir);
     // create the store files in the parent
     for (int i = 0; i < count; i++) {
@@ -741,7 +741,7 @@ public class TestCatalogJanitor {
       final HTableDescriptor htd, final HRegionInfo parent,
       final HRegionInfo daughter, final byte [] midkey, final boolean top)
   throws IOException {
-    Path rootdir = services.getMasterFileSystem().getRootDir();
+    Path rootdir = services.getMasterStorage().getRootDir();
     Path tabledir = FSUtils.getTableDir(rootdir, parent.getTable());
     Path storedir = HStore.getStoreHomedir(tabledir, daughter,
       htd.getColumnFamilies()[0].getName());
@@ -750,7 +750,7 @@ public class TestCatalogJanitor {
     long now = System.currentTimeMillis();
     // Reference name has this format: StoreFile#REF_NAME_PARSER
     Path p = new Path(storedir, Long.toString(now) + "." + parent.getEncodedName());
-    FileSystem fs = services.getMasterFileSystem().getFileSystem();
+    FileSystem fs = services.getMasterStorage().getFileSystem();
     ref.write(fs, p);
     return p;
   }
